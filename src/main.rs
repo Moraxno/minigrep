@@ -1,40 +1,24 @@
 use std::env;
-use std::fs;
-use std::io::prelude::*;
 use std::process;
 
-struct Config {
-    query: String,
-    file_path: String,
-}
-
-impl Config {
-    fn build(args: &[String]) -> Result<Config, &'static str> {
-        if args.len() < 3 {
-            return Err("not enough arguments");
-        }
-
-        let query = args[1].clone();
-        let file_path = args[2].clone();
-
-        Ok(Config { query, file_path })
-    }
-}
+use minigrep::Config;
 
 fn main() {
-    println!("Hello, world!");
-
     let args: Vec<String> = env::args().collect();
+    let ignore_case = env::var("IGNORE_CASE").is_ok();
 
-    let config = Config::build(&args).unwrap_or_else(|err| {
-        println!("Problem parsing arguments: {err}");
-        process::exit(1)
+    let config = Config::build(&args, ignore_case).unwrap_or_else(|err| {
+        eprintln!("Problem parsing arguments: {err}");
+        process::exit(1);
     });
 
-    let content = fs::read_to_string(&config.file_path).expect("Cannot find file.");
+    dbg!(&config);
 
-    dbg!(&args);
-    dbg!(&config.query);
-    dbg!(&config.file_path);
-    dbg!(&content);
+    println!("Searching for {}", config.query);
+    println!("In file {}", config.file_path);
+
+    if let Err(e) = minigrep::run(config) {
+        eprintln!("Application error: {e}");
+        process::exit(1);
+    }
 }
